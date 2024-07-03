@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        #map { height: 600px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>UrbanPulse Dashboard</h1>
+    <div id="map"></div>
+    <script>
+        var map = L.map('map').setView([40.7128, -74.0060], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        function updateMap() {
+            fetch('/api/vehicles/')
+                .then(response => response.json())
+                .then(data => {
+                    data.features.forEach(feature => {
+                        var coords = feature.geometry.coordinates;
+                        L.marker([coords[1], coords[0]]).addTo(map)
+                            .bindPopup(`Vehicle: ${feature.properties.vehicle_id}<br>Type: ${feature.properties.vehicle_type}`);
+                    });
+                });
+
+            fetch('/api/traffic-incidents/')
+                .then(response => response.json())
+                .then(data => {
+                    data.features.forEach(feature => {
+                        var coords = feature.geometry.coordinates;
+                        L.circle([coords[1], coords[0]], {
+                            color: 'red',
+                            fillColor: '#f03',
+                            fillOpacity: 0.5,
+                            radius: 500
+                        }).addTo(map).bindPopup(`Incident: ${feature.properties.incident_type}<br>Severity: ${feature.properties.severity}`);
+                    });
+                });
+
+            fetch('/api/events/')
+                .then(response => response.json())
+                .then(data => {
+                    data.features.forEach(feature => {
+                        var coords = feature.geometry.coordinates;
+                        L.marker([coords[1], coords[0]], {icon: L.divIcon({className: 'event-icon'})}).addTo(map)
+                            .bindPopup(`Event: ${feature.properties.name}<br>Start: ${feature.properties.start_time}`);
+                    });
+                });
+        }
+
+        updateMap();
+        setInterval(updateMap, 60000);  // Update every minute
+    </script>
+{% endblock %}
