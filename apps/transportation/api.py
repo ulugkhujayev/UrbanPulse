@@ -1,9 +1,8 @@
 import random
-from django.contrib.gis.geos import Point
 
 
 def get_vehicle_locations():
-    # This is a mock API
+    # Mock API for now :)
     vehicles = []
     for i in range(50):
         vehicles.append(
